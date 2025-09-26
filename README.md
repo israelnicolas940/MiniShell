@@ -69,15 +69,36 @@ mini-shell/
 - GCC compiler
 - Unix/Linux environment
 - Standard C libraries
+- CMake
+### Configuration
+```bash
+# from the project root
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+```
+- Available build types: Debug, Release.
+- You only need to specify the build type in the first configuration.
+- If you want to change it later, re-run cmake with a new -DCMAKE_BUILD_TYPE value.
 
 ### Compilation
 ```bash
-gcc -Wall mini_shell.c -o mini_shell
+cmake --build build/
 ```
-
-### Running the Shell
+### Running 
 ```bash
-./mini_shell
+./build/mini_shell
+```
+### Debugging
+```bash
+gdb ./build/mini_shell
+```
+### Testing 
+If GoogleTest is available, unit tests will be build automatically. Run all tests from the project root with:
+```bash
+ctest --test-dir build
+```
+Or run the executable directly:
+```bash
+./build/unit_tests
 ```
 
 ### Example Usage
