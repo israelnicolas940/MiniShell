@@ -1,4 +1,5 @@
 // Guilherme Gomes Botelho - 539008
+// Denis da Silva Victor - 539198
 // Coloquem o nome e a matrículo de vocês
 
 #include <stdio.h>
@@ -135,17 +136,16 @@ void execute_command(char **args, int background) // Função para executar coma
 }
 
 int is_internal_command(char **args) {
-  if (args[0] != NULL) {
-    int i = 0;
-    for (command cmd = internal_commands[i]; i < INTERNAL_COMMAND_COUNT;
-         ++i, cmd = internal_commands[i]) {
-      if (strcmp(cmd.name, args[0]) == 0) {
-        return 1;
-      }
-    }
-  }
+    if (args[0] == NULL) return 0;
 
-  return 0;
+    for (int i = 0; i < INTERNAL_COMMAND_COUNT; ++i) {
+        command cmd = internal_commands[i];  // pega o comando atual
+        if (strcmp(cmd.name, args[0]) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 void handle_jobs() {}
