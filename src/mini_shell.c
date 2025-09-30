@@ -10,9 +10,7 @@
 #include <unistd.h>
 #define MAX_CMD_LEN 256
 #define MAX_ARGS 32
-#define BG_PROCESSES_LEN 10
 
-pid_t null_pid = -10;
 // Array para armazenar PIDs de processos em background
 pid_t bg_processes[10];
 int bg_count = 0;
@@ -124,11 +122,8 @@ void handle_jobs(char **args) {
     printf("Nenhum processo em background\n");
   }
 
-  int bg_iter = 0;
-  for (; bg_iter < BG_PROCESSES_LEN; bg_iter++) {
-    if (bg_processes[bg_iter] != null_pid) {
-      printf("[%d] %d Executando\n", bg_iter + 1, bg_processes[bg_iter]);
-    }
+  for (int bg_iter = 0; bg_iter < bg_count; bg_iter++) {
+    printf("[%d] %d Executando\n", bg_iter + 1, bg_processes[bg_iter]);
   }
 }
 
@@ -152,12 +147,15 @@ void handle_wait(char **args) {
 
     // Localiza o PID no array de processos em background
     int i;
-    for (i = 0; i < BG_PROCESSES_LEN && pid != bg_processes[i]; i++)
+    for (i = 0; i < bg_count && pid != bg_processes[i]; i++)
       ;
-    if (i < BG_PROCESSES_LEN) {
+    if (i < bg_count) {
       printf("[%d]+ Finalizou (PID: %d)\n", i + 1, pid);
 
-      bg_processes[i] = null_pid;
+      // Shift
+      for (int j = i; j < bg_count - 1; j++) {
+        bg_processes[j] = bg_processes[j + 1];
+      }
       bg_count--;
     }
   }
@@ -183,15 +181,7 @@ void handle_internal_command(char **args) {
 
 void add_bg_process(pid_t pid) {
   if (bg_count < 10) {
-    int i = 0;
-    for (; i < BG_PROCESSES_LEN && bg_processes[i] != null_pid; i++)
-      ;
-    bg_processes[i] = pid;
-    bg_count++;
-
-    printf("[%d] %d\n", i + 1, pid);
-  } else {
-    printf("Lista de processos em background cheia! Por favor, aguarde \n");
+    bg_processes[bg_count++] = pid;
   }
 }
 
@@ -216,15 +206,18 @@ void execute_command(char **args, int background) {
 }
 
 // Limpa processos em background que já finalizaram
-void clean_finished_processes(void) {
+void clean_finished_processes() {
   int status;
   pid_t pid;
   // WNOHANG: não bloqueia se nenhum processo terminou
   while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-    for (int i = 0; i < BG_PROCESSES_LEN; i++) {
+    for (int i = 0; i < bg_count; i++) {
       if (bg_processes[i] == pid) {
         printf("[%d]+ Done\n", i + 1);
-        bg_processes[i] = null_pid;
+        // Remove o processo da lista e reorganiza
+        for (int j = i; j < bg_count - 1; j++) {
+          bg_processes[j] = bg_processes[j + 1];
+        }
         bg_count--;
         break;
       }
@@ -232,17 +225,10 @@ void clean_finished_processes(void) {
   }
 }
 
-void init_bg_processes(void) {
-  for (int i = 0; i < BG_PROCESSES_LEN; i++) {
-    bg_processes[i] = null_pid;
-  }
-}
-
 int main(void) {
   char input[MAX_CMD_LEN];
   char *args[MAX_ARGS];
   int background;
-  init_bg_processes();
   printf("Mini-Shell iniciado (PID: %d)\n", getpid());
   printf("Digite 'exit' para sair\n\n");
   while (1) {
