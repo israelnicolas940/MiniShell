@@ -1,6 +1,6 @@
 // Guilherme Gomes Botelho - 539008
 // Israel Nícolas de Souza Mendes - 537604
-// Coloquem o nome e a matrículo de vocês
+// Denis da Silva Victor - 539198
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,28 +55,35 @@ void parse_command(char *input, char **args, int *background) {
  * --------------------------------------------------------------------------------------------
  **/
 
+ // Enumeração dos comandos internos para indexação
 enum INTERNAL_COMMAND { EXIT, PID, JOBS, WAIT, INTERNAL_COMMAND_COUNT };
 
+// Estrutura para armazenar nome dos comandos
 typedef struct {
   char name[50];
 } Command;
 
+// Array constante com os nomes dos comandos internos
 static Command const internal_commands[INTERNAL_COMMAND_COUNT] = {
     [EXIT] = {"exit"}, [PID] = {"pid"}, [JOBS] = {"jobs"}, [WAIT] = {"wait"}};
 
+// Ponteiro de função para handlers de comandos internos
 typedef void (*InternalCommandHandlerFn)(char **args);
 
+// Declaração das funções handler
 void handle_exit(char **);
 void handle_pid(char **);
 void handle_jobs(char **);
 void handle_wait(char **);
 
+// Array de ponteiros para funções handler (dispatch table)
 InternalCommandHandlerFn internal_cmd_handler_arr[INTERNAL_COMMAND_COUNT] = {
     [EXIT] = handle_exit,
     [PID] = handle_pid,
     [JOBS] = handle_jobs,
     [WAIT] = handle_wait};
 
+// Macro para iterar sobre comandos internos
 #define for_each_internal_command(cmd_iter, internal_cmd_idx)                  \
   for (internal_cmd_idx = 0, cmd_iter = internal_commands[0];                  \
        internal_cmd_idx < INTERNAL_COMMAND_COUNT;                              \
@@ -85,6 +92,7 @@ InternalCommandHandlerFn internal_cmd_handler_arr[INTERNAL_COMMAND_COUNT] = {
                      ? internal_commands[internal_cmd_idx]                     \
                      : internal_commands[0])
 
+// Verifica se o comando é interno comparando com a lista
 int is_internal_command(char **args) {
   if (args[0] != NULL) {
     Command cmd;
@@ -99,24 +107,28 @@ int is_internal_command(char **args) {
   return 0;
 }
 
+// Finaliza processos em background e encerra o shell
 void handle_exit(char **args) {
   clean_finished_processes();
   printf("minishell encerrado\n");
   exit(0);
 }
 
+// Exibe PID do shell e do último processo filho criado
 void handle_pid(char **args) {
   printf("Pid do shell: %d\n", getpid());
   printf("Pid do último processo filho %d\n", last_child_pid);
 }
 
+// Lista todos os processos em background ativos
 void handle_jobs(char **args) {
   if (bg_count == 0) {
     printf("Nenhum processo em background\n");
+    return;
   }
 
   int bg_iter = 0;
-  printf("Processo em background:\n");
+  printf("Processo(s) em background:\n");
   for (; bg_iter < BG_PROCESSES_LEN; bg_iter++) {
     if (bg_processes[bg_iter] != null_pid) {
       printf("[%d] %d Executando\n", bg_iter + 1, bg_processes[bg_iter]);
@@ -124,6 +136,7 @@ void handle_jobs(char **args) {
   }
 }
 
+// Aguarda finalização de todos os processos em background
 void handle_wait(char **args) {
   if (bg_count == 0) {
     printf("Nenhum processo em background\n");
@@ -131,6 +144,8 @@ void handle_wait(char **args) {
   }
   int status;
   pid_t pid;
+
+  // Loop bloqueante até todos os processos finalizarem
   while (bg_count > 0) {
     pid = wait(&status);
 
@@ -139,6 +154,7 @@ void handle_wait(char **args) {
       break;
     }
 
+    // Localiza o PID no array de processos em background
     int i;
     for (i = 0; i < BG_PROCESSES_LEN && pid != bg_processes[i]; i++)
       ;
@@ -149,8 +165,10 @@ void handle_wait(char **args) {
       bg_count--;
     }
   }
+  printf("Todos os processos terminaram\n");
 }
 
+// Despacha comando para o handler apropriado usando a dispatch table
 void handle_internal_command(char **args) {
   Command cmd_iter;
   int i = 0;
@@ -219,7 +237,7 @@ void clean_finished_processes(void) {
   while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
     for (int i = 0; i < BG_PROCESSES_LEN; i++) {
       if (bg_processes[i] == pid) {
-        printf("[%d]+ Done\n", i + 1);
+        printf("[%d]+ Finalizou\n", i + 1);
         bg_processes[i] = null_pid;
         bg_count--;
         break;
