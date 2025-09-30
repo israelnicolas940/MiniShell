@@ -1,6 +1,6 @@
 // Guilherme Gomes Botelho - 539008
 // Israel Nícolas de Souza Mendes - 537604
-// Coloquem o nome e a matrículo de vocês
+// Denis da Silva Victor - 539198
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,9 +92,8 @@ int is_internal_command(char **args) {
         return 1;
       }
     }
-  }
 
-  return 0;
+    return 0;
 }
 
 void handle_exit(char **args) {
